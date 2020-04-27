@@ -1,30 +1,32 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
+import { stockDataMap, stockDataSymbolsList, stockList } from "./stock";
 
-/**
- * useEffect will be called whenever count state changes
- * the second parameter in hooks functions works in the same way
- * and compares values with previous ones to be run.
- */
 function App() {
   const [data, setData] = useState();
   const [loaded, setIsLoaded] = useState(false);
-  const personalStocks = {
-    TSLA: { symbol: "TSLA", shares: 2, purchasedPriced: 390 },
-    MSFT: { symbol: "MSFT", shares: 3, purchasedPriced: 142.33 },
-    XPO: { symbol: "XPO", shares: 2, purchasedPriced: 53.26 },
-    DAL: { symbol: "DAL", shares: 10, purchasedPriced: 24.43 }
-  };
+  // const [stockTotal, setStockTotal] = useState(0);
+  let investedTotal = 0;
+  stockList.forEach(({ purchasedPrice, shares }) => {
+    investedTotal += purchasedPrice * shares;
+  });
+
+  /******************************************************
+     *EDIT STOCKS HERE
+     EX: TSLA is Tesla
+     TSLA: { symbol: "TSLA", shares: 2, purchasedPrice: 390 },
+
+  ******************************************************/
 
   useEffect(() => {
     if (!loaded) {
       // const startDate = "2020.04.15";
       // const previousDate = new Date(startDate).getTime() / 1000;
       // const currentDate = (new Date().getTime() / 1000).toFixed(0);
-      const stockSymbols = ["TSLA", "MSFT", "XPO", "DAL"].join(",");
+
       const proxyUrl = "https://cors-anywhere.herokuapp.com/";
       // const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/TSLA?period1=${previousDate}&period2=${currentDate}&interval=1d`;
-      const targetUrl = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${stockSymbols}`;
+      const targetUrl = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${stockDataSymbolsList}`;
       fetch(proxyUrl + targetUrl)
         .then(blob => blob.json())
         .then(data => {
@@ -64,38 +66,56 @@ function App() {
   return (
     <>
       <div>
-        {stockArray &&
-          stockArray.map(stock => (
-            <div>
-              <p>
-                {stock.symbol}: {stock.regularMarketPrice}
-              </p>
-              <p>
-                Gain/Loss:{" "}
-                <span
-                  style={gainLossStyle(
-                    (
-                      stock.regularMarketPrice *
-                        personalStocks[stock.symbol].shares -
-                      personalStocks[stock.symbol].purchasedPriced *
-                        personalStocks[stock.symbol].shares
-                    ).toFixed(2)
-                  )}
-                >
-                  {(
-                    stock.regularMarketPrice *
-                      personalStocks[stock.symbol].shares -
-                    personalStocks[stock.symbol].purchasedPriced *
-                      personalStocks[stock.symbol].shares
-                  ).toFixed(2)}
-                </span>
-              </p>
-              <br />
-            </div>
-          ))}
-        {/* Tesla Price:{" "}
-        {data?.quoteResponse?.result[0].regularMarketPrice.toFixed(2)} */}
+        <table>
+          <tbody>
+            <tr>
+              <td>
+                <b>Symbol</b>
+              </td>
+              <td>
+                <b>Current Price</b>
+              </td>
+              <td>
+                <b>Purchased Price</b>
+              </td>
+              <td>
+                <b>Quantity</b>
+              </td>
+              <td>
+                <b>Gain/Loss</b>
+              </td>
+            </tr>
+            {stockArray &&
+              stockArray.map(stock => {
+                const symbol = stock.symbol;
+                const shares = stockDataMap[symbol].shares;
+                const purchasedPrice = stockDataMap[symbol].purchasedPrice;
+                const currentPrice = stock.regularMarketPrice;
+
+                const gainLossValue = (
+                  currentPrice * shares -
+                  purchasedPrice * shares
+                ).toFixed(2);
+
+                return (
+                  <tr>
+                    <td>{symbol}</td>
+                    <td>${currentPrice.toFixed(2)}</td>
+                    <td>${purchasedPrice.toFixed(2)}</td>
+                    <td>{shares}</td>
+                    <td>
+                      <span style={gainLossStyle(gainLossValue)}>
+                        {gainLossValue}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+          </tbody>
+        </table>
       </div>
+      <p>Investment Total: {investedTotal.toFixed(2)}</p>
+      {/* <p>Personal Gain {investedTotal.toFixed(2)}</p> */}
       <button
         onClick={() => {
           setIsLoaded(false);
